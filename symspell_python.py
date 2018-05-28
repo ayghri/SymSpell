@@ -1,29 +1,41 @@
-
 import sys
-import utils        
-
+import utils
+            
 class SymSpell(object):
-    """
-        Python Implementation of SymSpell
-    """
     
     def __init__(self,list_words,max_distance = 3):
-        
         self.max_distance = max_distance 
-        self.dictionary = build_dictionary_entries(list_words,self.max_distance)
-        
+        self.dictionary = {}
+        self.max_length = 0
+        self.progbar = utils.Progbar(len(list_words))
+        self.build(list_words)
 
+    def build(self,words):
+        n = len(words)
+        self.progbar.__init__(n)
+        sys.stdout.write("Processing %d words to create SymSpell for edit distance %d \n"%(n,self.max_distance))
+        for i in range(n):
+            self.progbar.add(1)
+            w=words[i]
+            if w in self.dictionary:
+                self.dictionary[w] = (self.dictionary[w][0], self.dictionary[w][1] + 1)
+            else:
+                self.dictionary[w] = ([], 1)  
+                self.max_length = max(self.max_length, len(w))
+                
+            if self.dictionary[w][1]==1:
+                deletes = utils.generate_deletes(w,self.max_distance)
+                for d in deletes:
+                    if d in self.dictionary:
+                        self.dictionary[d][0].append(w)
+                    else:
+                        self.dictionary[d] = ([w], 0)  
                         
-    def corrections(self,string):
-        """
-            Return all words of the corpus that are in distance <= max_distance
-            The values are : distance, number of occurencies
-        """
+    def correct(self,string):
         if (len(string) - self.max_length) > self.max_distance:
             return []        
         corrections_dict = {}
-        min_correct_len = float('inf')
-        
+        min_correct_len = float('inf')        
         queue = sorted(list(set([string]+utils.generate_deletes(string,self.max_distance))),key=len,reverse=True)
 
         while len(queue)>0:
@@ -58,38 +70,10 @@ class SymSpell(object):
         return corrections_dict
     
     def best(self,string):
-        """
-            Returns the best word, sorted by distanc ethen by occurencies
-        """
         try:
-            as_list = self.get_corrections(string).items()
-            outlist = sorted(as_list, key= lambda key,val : (val[1], -val[0]))
+            as_list = self.correct(string).items()
+            outlist = sorted(as_list, key=lambda item : (item[1][1], -item[1][0]))
             return outlist[0][0]
         except:
             return None
-
-def build_dictionary_entries(words, max_distance):
-    dictionary = {}
-    n = len(words)
-    sys.stdout.write("Processing %d words to create SymSpell for edit distance %d \n"%(n,max_distance))
-    for i in range(n):
-        if not i%10000:
-            sys.stdout.write("%d out of %d\r"%(i,n))
-            sys.stdout.flush()
-        w=words[i]
-        if w in dictionary:
-            dictionary[w] = (dictionary[w][0], dictionary[w][1] + 1)
-        else:
-            dictionary[w] = ([], 1)  
-            max_length = max(max_distance, len(w))
-            
-        if dictionary[w][1]==1:
-            deletes = utils.generate_deletes(w,max_length)
-            for d in deletes:
-                if d in dictionary:
-                    dictionary[d][0].append(w)
-                else:
-                    dictionary[d] = ([w], 0)         
-    
-    return dictionary
-
+        

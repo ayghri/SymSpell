@@ -2,7 +2,6 @@
 Implementation in Python3
 <br>
 * For further details about the concept, check https://github.com/wolfgarbe/SymSpell
-* This version if based on the functional implementation https://github.com/ppgmg/github_public/tree/master/spell
 
 The idea is to use Lavenshtein distance to correct words, but only using the delete operation (without insertion or transposition). Since the delete cost is lower, the larger the dictionary the more computations are spared.
 
